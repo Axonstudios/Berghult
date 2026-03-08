@@ -293,6 +293,7 @@
 </div>
 
 <nav id="sidebarNav" style="display: none;">
+    <div class="nav-item teacher-only" style="display:none;" onclick="switchView('teacherInboxView', this)">📥 Inkorg</div>
     <div class="logo">⚡ EduQuest</div>
     <div class="nav-item active" onclick="switchView('dashboardView', this)">Dashboard</div>
     <div class="nav-item" onclick="switchView('leaderboardView', this)">🏆 Topplista</div> <div class="nav-item teacher-only" onclick="switchView('classView', this)">Mina Klasser</div>
@@ -300,6 +301,12 @@
 </nav>
 
 <main id="mainContent" style="display: none;">
+    <div id="teacherInboxView" class="view" style="display:none;">
+    <h2>📥 Min Inkorg</h2>
+    <p>Här ser du meddelanden från dina elever.</p>
+    <div id="inboxList" style="margin-top: 20px;">
+        </div>
+</div>
     <div class="profile-container" id="profileMenu" style="display:none;">
     <div class="profile-trigger" onclick="toggleDropdown()">
         <div style="width:35px; height:35px; background:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;" id="userInitials">?</div>
@@ -318,6 +325,20 @@
         </div>
         <div class="dropdown-item">
             <button onclick="logout()" style="width:100%; padding:8px; background:#fee2e2; color:#ef4444; border:none; border-radius:8px; cursor:pointer; font-weight:bold; transition: 0.2s;">Logga ut</button>
+        <div class="teacher-only" style="display:none; padding:10px; border-top:1px solid #eee;">
+    <label style="font-size:12px; font-weight:bold;">Min Status:</label>
+    <select id="teacherStatusSelect" onchange="updateMyStatus()" style="width:100%; padding:5px; border-radius:5px;">
+        <option value="Inaktiv">🔴 Inaktiv</option>
+        <option value="Aktiv">🟢 Aktiv</option>
+    </select>
+</div>
+
+<div class="nav-item" onclick="switchView('teacherChatView', this)">💬 Chatta med lärare</div>
+
+<div id="teacherChatView" class="view" style="display:none;">
+    <h2>Chatta med lärare</h2>
+    <p>Här ser du vilka lärare som är tillgängliga just nu.</p>
+    <div id="teacherStatusList" class="grid-container">
         </div>
     </div>
 </div>
@@ -490,6 +511,13 @@
             } else if (teacherAccounts.includes(user)) {
                 document.querySelectorAll('.teacher-only').forEach(e => e.style.display = 'block');
             } else {
+                // Inuti window.onload, där du kollar om användaren är lärare:
+            if (teacherAccounts.includes(user)) {
+            const statusSelect = document.getElementById('teacherStatusSelect');
+            if(statusSelect && userDatabase[user].status) {
+        statusSelect.value = userDatabase[user].status;
+        }
+    }
                 document.querySelectorAll('.student-only').forEach(e => e.style.display = 'block');
                 if(userDatabase[user].classCode) showClassroom();
             }
@@ -502,15 +530,21 @@
     };
 
     function switchView(id, element) {
-        ['dashboardView', 'classView', 'adminView', 'leaderboardView'].forEach(v => {
-            const el = document.getElementById(v);
-            if(el) el.style.display = 'none';
-        });
-        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-        document.getElementById(id).style.display = 'block';
-        if(element) element.classList.add('active');
-        if(id === 'leaderboardView') renderLeaderboard();
-    }
+    // Lägg till 'teacherInboxView' i listan här under
+    ['dashboardView', 'classView', 'adminView', 'leaderboardView', 'teacherChatView', 'teacherInboxView'].forEach(v => {
+        const el = document.getElementById(v);
+        if(el) el.style.display = 'none';
+    });
+    
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    document.getElementById(id).style.display = 'block';
+    if(element) element.classList.add('active');
+
+    // Kör render-funktioner beroende på vy
+    if (id === 'teacherChatView') renderTeacherStatusList();
+    if (id === 'teacherInboxView') renderInbox();
+    if (id === 'leaderboardView') renderLeaderboard();
+}
 
     function logout() { 
         localStorage.removeItem('currentUser'); 
@@ -797,6 +831,112 @@
         const chat = document.getElementById('aiChatWindow');
         if(chat) chat.style.display = (chat.style.display === 'flex') ? 'none' : 'flex';
     }
+    // 1. Uppdatera lärarens status
+function updateMyStatus() {
+    const email = localStorage.getItem('currentUser');
+    const status = document.getElementById('teacherStatusSelect').value;
+    
+    if (userDatabase[email]) {
+        userDatabase[email].status = status;
+        localStorage.setItem('userDatabase', JSON.stringify(userDatabase));
+        alert("Din status är nu: " + status);
+    }
+}
+
+// 2. Visa alla lärare och deras status
+function renderTeacherStatusList() {
+    const listDiv = document.getElementById('teacherStatusList');
+    if (!listDiv) return;
+    listDiv.innerHTML = "";
+
+    teacherAccounts.forEach(email => {
+        const teacher = userDatabase[email];
+        if (!teacher) return;
+
+        const status = teacher.status || "Inaktiv";
+        const statusClass = status === "Aktiv" ? "status-online" : "status-offline";
+        const statusEmoji = status === "Aktiv" ? "🟢" : "🔴";
+
+        listDiv.innerHTML += `
+            <div class="card" style="cursor:pointer;" onclick="openPrivateChat('${email}')">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <b>${teacher.fullName}</b>
+                    <span>${statusEmoji} ${status}</span>
+                </div>
+                <small>${email}</small>
+            </div>
+        `;
+    });
+}
+
+// 3. Öppna chatt (här kan vi använda en prompt eller bygga ut ett fönster)
+function openPrivateChat(teacherEmail) {
+    const teacher = userDatabase[teacherEmail];
+    const msg = prompt(`Skicka ett meddelande till ${teacher.fullName}:`);
+    
+    if (msg) {
+        // I en riktig app skulle detta sparas i en databas. 
+        // För nu sparar vi det i en "mailbox" i localStorage för den läraren.
+        if (!userDatabase[teacherEmail].messages) userDatabase[teacherEmail].messages = [];
+        
+        userDatabase[teacherEmail].messages.push({
+            from: localStorage.getItem('currentUser'),
+            text: msg,
+            time: new Date().toLocaleTimeString()
+        });
+        
+        localStorage.setItem('userDatabase', JSON.stringify(userDatabase));
+        alert("Meddelandet har skickats!");
+    }
+}
+// 1. Rendera inkorgen
+function renderInbox() {
+    const user = localStorage.getItem('currentUser');
+    const inboxDiv = document.getElementById('inboxList');
+    if (!inboxDiv || !userDatabase[user]) return;
+
+    const messages = userDatabase[user].messages || [];
+    inboxDiv.innerHTML = "";
+
+    if (messages.length === 0) {
+        inboxDiv.innerHTML = "<p style='color:gray;'>Inga meddelanden ännu.</p>";
+        return;
+    }
+
+    // Visa meddelanden med det senaste överst
+    [...messages].reverse().forEach((msg, index) => {
+        const senderName = userDatabase[msg.from] ? userDatabase[msg.from].fullName : msg.from;
+        
+        inboxDiv.innerHTML += `
+            <div class="card" style="border-left: 5px solid var(--primary); margin-bottom: 15px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+                    <b>Från: ${senderName}</b>
+                    <small style="color:gray;">${msg.time}</small>
+                </div>
+                <p style="background: #f1f5f9; padding: 10px; border-radius: 8px;">${msg.text}</p>
+                <button onclick="replyToStudent('${msg.from}')" style="margin-top:10px; background:var(--secondary); font-size: 12px;">Svara</button>
+            </div>
+        `;
+    });
+}
+
+// 2. Svara på ett meddelande
+function replyToStudent(studentEmail) {
+    const replyText = prompt("Skriv ditt svar till eleven:");
+    if (!replyText) return;
+
+    // Vi sparar svaret i elevens egen lilla "meddelande-korg" i databasen
+    if (!userDatabase[studentEmail].messages) userDatabase[studentEmail].messages = [];
+
+    userDatabase[studentEmail].messages.push({
+        from: localStorage.getItem('currentUser'),
+        text: "SVAR FRÅN LÄRARE: " + replyText,
+        time: new Date().toLocaleTimeString()
+    });
+
+    localStorage.setItem('userDatabase', JSON.stringify(userDatabase));
+    alert("Svar skickat!");
+}
 </script>
 <div id="aiChatBubble" onclick="toggleChat()">
     <span>🤖</span>
