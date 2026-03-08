@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>EduQuest System</title>
+    <style>
+        :root { --primary: #6366f1; --bg: #f3f4f6; --sidebar: #ffffff; --card: #ffffff; --text-dark: #1f2937; --accent: #10b981; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { display: flex; background-color: var(--bg); color: var(--text-dark); height: 100vh; overflow: hidden; }
+        .admin-only, .teacher-only, .student-only { display: none; }
+        nav { width: 260px; background: var(--sidebar); border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; padding: 20px; }
+        .logo { font-size: 22px; font-weight: 800; color: var(--primary); margin-bottom: 40px; }
+        .nav-item { padding: 12px 15px; border-radius: 10px; text-decoration: none; color: #6b7280; margin-bottom: 5px; cursor: pointer; font-weight: 600; }
+        .nav-item.active { background: #f0f2ff; color: var(--primary); }
+        main { flex: 1; padding: 40px; overflow-y: auto; }
+        .card { background: var(--card); padding: 25px; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .btn-main { background: var(--primary); color: white; padding: 12px 24px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; }
+        #loginScreen { position: fixed; inset: 0; background: #f3f4f6; display: flex; justify-content: center; align-items: center; z-index: 5000; }
+        .login-box { background: white; padding: 40px; border-radius: 20px; width: 400px; }
+        .login-box input { display: block; width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ddd; }
+        /* Profil-dropdown behållare */
+.profile-container {
+    position: absolute;
+    top: 20px;
+    right: 40px;
+    z-index: 1000;
+}
+
+.profile-trigger {
+    background: white;
+    padding: 8px 15px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+    border: 1px solid #e5e7eb;
+}
+
+.profile-trigger:hover { transform: translateY(-2px); }
+
+.profile-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 220px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    padding: 15px;
+    display: none; /* Dold som standard */
+    transform-origin: top right;
+    animation: slideDown 0.3s ease-out forwards;
+    border: 1px solid #e5e7eb;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.dropdown-item { padding: 10px; border-bottom: 1px solid #f3f4f6; }
+.dropdown-item:last-child { border-bottom: none; }
+
+.xp-badge {
+    background: #f0f2ff;
+    color: var(--primary);
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: bold;
+}
+.profile-wrapper {
+    position: fixed;
+    top: 20px;
+    right: 30px;
+    z-index: 1000;
+}
+
+.profile-btn {
+    background: white;
+    padding: 6px 12px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+.profile-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+}
+
+/* Själva menyn som dyker upp */
+/* Denna del styr utseendet och startläget (dolt) */
+.dropdown-menu {
+    position: absolute;
+    top: 55px;
+    right: 0;
+    width: 240px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+    border: 1px solid #f1f5f9;
+    padding: 8px;
+    
+    /* Animation-inställningar */
+    display: none; /* Vi använder JS för att ändra till block */
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); /* Gör rörelsen mjuk */
+    pointer-events: none; /* Hindrar klick när den är osynlig */
+    z-index: 2000;
+}
+
+/* När denna klass läggs till med JS, startar animationen */
+.dropdown-menu.active {
+    display: block;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.dropdown-header {
+    padding: 12px;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 4px;
+}
+
+.dropdown-item {
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    color: #475569;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.dropdown-item:hover {
+    background: #f1f5f9;
+}
+
+.logout-btn {
+    color: #ef4444;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+.logout-btn:hover {
+    background: #fef2f2;
+}
+/* ... din gamla CSS ... */
+
+/* NR 3: Hover-effekter för dropdown */
+.dropdown-item {
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.dropdown-item:hover {
+    background: #f8fafc;
+    transform: translateX(4px); /* Flyttar texten lite åt höger vid hover */
+}
+
+.logout-btn:hover {
+    background: #fff1f2 !important;
+    color: #e11d48 !important;
+}
+/* Här slutar din CSS */
+/* Flytande knapp */
+#aiChatBubble {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    background: var(--primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    z-index: 3000;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+#aiChatBubble:hover { transform: scale(1.1); }
+
+/* Chatt-fönstret */
+#aiChatWindow {
+    position: fixed;
+    bottom: 100px;
+    right: 30px;
+    width: 350px;
+    height: 450px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    display: none; /* Dold som standard */
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 3000;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.9); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+#aiChatHeader { background: var(--primary); color: white; padding: 15px; font-weight: bold; display: flex; justify-content: space-between; }
+
+#aiChatMessages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #f8fafc; }
+
+.msg { padding: 10px 14px; border-radius: 15px; font-size: 14px; max-width: 80%; line-height: 1.4; }
+.ai-msg { background: white; border: 1px solid #e2e8f0; align-self: flex-start; border-bottom-left-radius: 2px; }
+.user-msg { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+
+#aiChatInputArea { padding: 15px; border-top: 1px solid #eee; display: flex; gap: 10px; }
+#aiChatInputArea input { flex: 1; border: 1px solid #ddd; padding: 8px; border-radius: 8px; outline: none; }
+#aiChatInputArea button { background: var(--primary); border: none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="profile-wrapper">
+    <div class="profile-btn" onclick="toggleMenu(event)">
+        <div id="pInitials" style="width:32px; height:32px; background:#6366f1; color:white; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:bold;">?</div>
+        <span id="pFirstName" style="font-weight:600; font-size:14px; color:#1e293b;">Laddar...</span>
+        <span style="font-size:10px; color:#94a3b8;">▼</span>
+    </div>
+
+    <div class="dropdown-menu" id="dropdown">
+        <div class="dropdown-header">
+            <div id="pFullName" style="font-weight:700; color:#0f172a; font-size:15px;">Namn</div>
+            <div id="pEmail" style="font-size:12px; color:#64748b;">mejl@skola.se</div>
+        </div>
+        <div class="dropdown-item">
+            <span>⭐</span>
+            <span>XP: <b id="pXP" style="color:#6366f1;">0</b></span>
+        </div>
+        <div class="dropdown-item logout-btn" onclick="logout()">
+            <span>🚪</span>
+            <span>Logga ut</span>
+        </div>
+    </div>
+</div>
+<div id="loginScreen">
+    <div class="login-box">
+        <h2 id="loginTitle">EduQuest Login</h2>
+        <div id="registerFields" style="display: none;">
+            <input type="text" id="regName" placeholder="Fullständigt namn">
+        </div>
+        <input type="email" id="loginEmail" placeholder="Mejl">
+        <input type="password" id="loginPassword" placeholder="Lösenord">
+        
+        <button class="btn-main" id="mainLoginBtn" style="width: 100%" onclick="handleLogin()">Logga in</button>
+        <button class="btn-main" id="mainRegBtn" style="width: 100%; display: none; background: var(--accent);" onclick="handleRegister()">Skapa konto</button>
+        
+        <p id="toggleText" style="margin-top:15px; font-size:13px; cursor:pointer; color:var(--primary); text-align:center;" onclick="toggleAuthMode()">Inget konto? Registrera dig här</p>
+    </div>
+</div>
+
+<nav id="sidebarNav" style="display: none;">
+    <div class="logo">⚡ EduQuest</div>
+    <div class="nav-item active" onclick="switchView('dashboardView', this)">Dashboard</div>
+    <div class="nav-item" onclick="switchView('leaderboardView', this)">🏆 Topplista</div> <div class="nav-item teacher-only" onclick="switchView('classView', this)">Mina Klasser</div>
+    <div class="nav-item admin-only" onclick="switchView('adminView', this)">System-Admin</div>
+</nav>
+
+<main id="mainContent" style="display: none;">
+    <div class="profile-container" id="profileMenu" style="display:none;">
+    <div class="profile-trigger" onclick="toggleDropdown()">
+        <div style="width:35px; height:35px; background:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;" id="userInitials">?</div>
+        <span id="triggerName" style="font-weight:600; font-size:14px;">Profil</span>
+        <span style="font-size:10px;">▼</span>
+    </div>
+    
+    <div class="profile-dropdown" id="myDropdown">
+        <div class="dropdown-item">
+            <div style="font-weight:bold; font-size:14px;" id="dropFullname">Namn</div>
+            <div style="font-size:11px; color:#6b7280;" id="dropEmail">mejl@skola.se</div>
+        </div>
+        <div class="dropdown-item">
+            <span style="font-size:13px;">Din XP:</span>
+            <span class="xp-badge" id="dropXp">0 XP</span>
+        </div>
+        <div class="dropdown-item">
+            <button onclick="logout()" style="width:100%; padding:8px; background:#fee2e2; color:#ef4444; border:none; border-radius:8px; cursor:pointer; font-weight:bold; transition: 0.2s;">Logga ut</button>
+        </div>
+    </div>
+</div>
+    <div id="profileHeader" style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+    <div style="font-weight: bold; color: var(--primary);">
+        ⭐ <span id="userXpDisplay">0</span> XP
+    </div>
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <span id="userNameDisplay" style="font-size: 14px; color: #6b7280;"></span>
+    </div>
+</div>
+
+    <div id="dashboardView">
+        <div class="student-only">
+            <div id="joinSection">
+                <div class="card">
+                    <h3>Gå med i klass</h3>
+                    <input type="text" id="joinCode" placeholder="Kod från lärare" style="padding:10px; border-radius:8px; border:1px solid #ddd; margin-right:10px;">
+                    <button class="btn-main" onclick="joinClass()">Gå med</button>
+                </div>
+            </div>
+            <div id="studentClassroom" style="display:none;">
+                <div class="card">
+                    <h2 id="classNameTitle">Klassrum</h2>
+                    <hr style="margin: 15px 0;">
+                    <div id="questContainer">
+                        <p id="questText">Ingen uppgift aktiv.</p>
+                        <div id="answerArea" style="display:none; margin-top:15px;">
+                            <input type="text" id="studentAnswerInput" placeholder="Ditt svar..." style="padding:10px; width:100%; border-radius:8px; border:1px solid #ddd; margin-bottom:10px;">
+                            <button class="btn-main" id="submitAnswerBtn">Lämna in</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="teacher-only">
+            <h1>Välkommen Lärare!</h1>
+            <p>Gå till "Mina Klasser" för att skapa uppgifter.</p>
+        </div>
+    </div>
+    <div id="leaderboardView" style="display:none;">
+    <div class="card">
+        <div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
+            <span style="font-size:30px;">🏆</span>
+            <h1 style="margin:0;">Topplista</h1>
+        </div>
+        <p style="color:#64748b; margin-bottom:20px;">Här ser du vem som leder jakten på XP!</p>
+        
+        <div id="leaderboardList" style="display: flex; flex-direction: column; gap: 10px;">
+            </div>
+    </div>
+</div>
+    <div id="classView" style="display:none;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+            <h1>Mina Klasser</h1>
+            <button class="btn-main" onclick="const n = prompt('Klassnamn:'); if(n) createClass(n);">+ Ny klass</button>
+        </div>
+        <div id="classList"></div>
+        
+        <div id="manageArea" class="card" style="display:none; border: 2px dashed var(--primary); margin-top:20px;">
+            <input type="number" id="xpRewardInput" placeholder="XP (t.ex. 100)" style="width:100%; padding:10px; margin-bottom:10px;">
+            <p>Kod: <span id="manageCodeDisplay" style="font-weight:bold;"></span></p>
+            <div style="margin-top:15px;">
+                <input type="text" id="qInput" placeholder="Fråga..." style="width:100%; padding:10px; margin-bottom:5px;">
+                <input type="text" id="aInput" placeholder="Rätt svar (facit)..." style="width:100%; padding:10px; margin-bottom:10px;">
+                <label style="font-size: 12px; font-weight: bold;">Poäng för rätt svar:</label>
+                <input type="number" id="xpRewardInput" placeholder="Ex: 100" value="100" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #ddd;">
+                <button class="btn-main" onclick="sendQuest()">Skicka Uppgift</button>
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+                <div id="questListArea">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminView" style="display:none;">
+    <h1>System-Admin</h1>
+    
+    <div class="card">
+        <h3>Godkänn ny lärare</h3>
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <input type="email" id="newTeacherEmail" placeholder="mejl@skola.se" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ddd;">
+            <button class="btn-main" onclick="addTeacher()">Godkänn</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Godkända Lärare</h3>
+        <ul id="teacherListDisplay" style="list-style:none; margin-top:10px;">
+            </ul>
+    </div>
+
+    <div class="card">
+        <h3>Alla registrerade elever</h3>
+        <ul id="allStudents" style="list-style:none; margin-top:10px;">
+            </ul>
+    </div>
+</div>
+</main>
+
+<script>
+    // 1. Databas och Variabler
+    let userDatabase = JSON.parse(localStorage.getItem('userDatabase')) || {
+        "liawai0802@edu.lerum.se": { password: "123", fullName: "Admin", xp: 0 },
+        "larare@skola.se": { password: "123", fullName: "Lärare", xp: 0 }
+    };
+    let teacherAccounts = JSON.parse(localStorage.getItem('savedTeachers')) || ["larare@skola.se"];
+    let myClasses = JSON.parse(localStorage.getItem('savedClasses')) || [];
+    const myAdminMejl = "liawai0802@edu.lerum.se";
+
+    // 2. Inloggning och Registrering
+    function handleLogin() {
+        const email = document.getElementById('loginEmail').value.toLowerCase().trim();
+        const pass = document.getElementById('loginPassword').value;
+        if (userDatabase[email] && userDatabase[email].password === pass) {
+            localStorage.setItem('currentUser', email);
+            location.reload();
+        } else { 
+            alert("Fel login eller lösenord."); 
+        }
+    }
+
+    function toggleAuthMode() {
+        const title = document.getElementById('loginTitle');
+        const isLogin = title.innerText === "EduQuest Login";
+        title.innerText = isLogin ? "Skapa konto" : "EduQuest Login";
+        document.getElementById('registerFields').style.display = isLogin ? "block" : "none";
+        document.getElementById('mainLoginBtn').style.display = isLogin ? "none" : "block";
+        document.getElementById('mainRegBtn').style.display = isLogin ? "block" : "none";
+        document.getElementById('toggleText').innerText = isLogin ? "Redan medlem? Logga in" : "Inget konto? Registrera dig här";
+    }
+
+    function handleRegister() {
+        const name = document.getElementById('regName').value.trim();
+        const email = document.getElementById('loginEmail').value.toLowerCase().trim();
+        const pass = document.getElementById('loginPassword').value;
+
+        if (!name || !email || !pass) {
+            alert("Fyll i alla fält!");
+            return;
+        }
+        if (userDatabase[email]) {
+            alert("Denna mejladress är redan registrerad.");
+            return;
+        }
+
+        userDatabase[email] = { password: pass, fullName: name, xp: 0, completedQuests: [] };
+        localStorage.setItem('userDatabase', JSON.stringify(userDatabase));
+        alert("Konto skapat! Du kan nu logga in.");
+        toggleAuthMode();
+    }
+
+    // 3. Uppstart (Window Onload)
+    window.onload = function() {
+        const user = localStorage.getItem('currentUser');
+        if (user && userDatabase[user]) {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('sidebarNav').style.display = 'flex';
+            document.getElementById('mainContent').style.display = 'block';
+            
+            document.getElementById('userXpDisplay').innerText = userDatabase[user].xp || 0;
+            document.getElementById('userNameDisplay').innerText = userDatabase[user].fullName;
+
+            if (user === myAdminMejl) {
+                document.querySelectorAll('.admin-only, .teacher-only').forEach(e => e.style.display = 'block');
+            } else if (teacherAccounts.includes(user)) {
+                document.querySelectorAll('.teacher-only').forEach(e => e.style.display = 'block');
+            } else {
+                document.querySelectorAll('.student-only').forEach(e => e.style.display = 'block');
+                if(userDatabase[user].classCode) showClassroom();
+            }
+
+            setupProfile(user);
+            renderClasses();
+            renderAdmin();
+            renderLeaderboard();
+        }
+    };
+
+    function switchView(id, element) {
+        ['dashboardView', 'classView', 'adminView', 'leaderboardView'].forEach(v => {
+            const el = document.getElementById(v);
+            if(el) el.style.display = 'none';
+        });
+
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+
+        document.getElementById(id).style.display = 'block';
+
+        if(element) {
+            element.classList.add('active');
+        }
+
+        if(id === 'leaderboardView') {
+            renderLeaderboard();
+        }
+    }
+
+    function logout() { 
+        localStorage.removeItem('currentUser'); 
+        location.reload(); 
+    }
+
+    function toggleMenu(event) {
+        event.stopPropagation();
+        const menu = document.getElementById('dropdown');
+        
+        if (!menu.classList.contains('active')) {
+            menu.style.display = 'block';
+            setTimeout(() => {
+                menu.classList.add('active');
+            }, 10);
+        } else {
+            menu.classList.remove('active');
+            setTimeout(() => {
+                if(!menu.classList.contains('active')) {
+                    menu.style.display = 'none';
+                }
+            }, 200);
+        }
+    }
+
+    function setupProfile(email) {
+        const user = userDatabase[email];
+        if (user) {
+            if(document.getElementById('pFirstName')) document.getElementById('pFirstName').innerText = user.fullName.split(' ')[0];
+            if(document.getElementById('pFullName')) document.getElementById('pFullName').innerText = user.fullName;
+            if(document.getElementById('pEmail')) document.getElementById('pEmail').innerText = email;
+            if(document.getElementById('pXP')) document.getElementById('pXP').innerText = user.xp || 0;
+            if(document.getElementById('pInitials')) document.getElementById('pInitials').innerText = user.fullName.charAt(0).toUpperCase();
+        }
+    }
+
+    window.onclick = function(event) {
+        const dropdown = document.getElementById('dropdown');
+        if (dropdown && dropdown.classList.contains('active')) {
+            if (!event.target.closest('.profile-wrapper')) {
+                dropdown.classList.remove('active');
+            }
+        }
+    };
+
+    function createClass(name) {
+        const code = Math.random().toString(36).substring(2,8).toUpperCase();
+        myClasses.push({ name, code, owner: localStorage.getItem('currentUser'), quests: [] });
+        localStorage.setItem('savedClasses', JSON.stringify(myClasses));
+        renderClasses();
+    }
+
+    function renderClasses() {
+        const div = document.getElementById('classList');
+        if(!div) return;
+        div.innerHTML = "";
+        const user = localStorage.getItem('currentUser');
+        myClasses.forEach(c => {
+            if (c.owner === user || user === myAdminMejl) {
+                div.innerHTML += `<div class="card"><b>${c.name}</b> (Kod: ${c.code}) <button onclick="manageClass('${c.code}')">Hantera</button></div>`;
+            }
+        });
+    }
+
+    function manageClass(code) {
+        document.getElementById('manageArea').style.display = 'block';
+        document.getElementById('manageCodeDisplay').innerText = code;
+        const currentClass = myClasses.find(c => c.code === code);
+        const title = document.getElementById('manageTitle');
+        if(title) title.innerText = "Hantera: " + currentClass.name;
+        renderQuestList(code); 
+    }
+
+    function sendQuest() {
+        const code = document.getElementById('manageCodeDisplay').innerText;
+        const q = document.getElementById('qInput').value;
+        const a = document.getElementById('aInput').value.toLowerCase().trim();
+        const xp = parseInt(document.getElementById('xpRewardInput').value) || 100; 
+        
+        const c = myClasses.find(x => x.code === code);
+        if(c && q && a) {
+            c.quests.push({ id: Date.now(), q: q, a: a, xpReward: xp });
+            localStorage.setItem('savedClasses', JSON.stringify(myClasses));
+            alert("Uppgift skickad!");
+            renderQuestList(code); 
+        }
+    }
+
+    function renderQuestList(code) {
+        const c = myClasses.find(x => x.code === code);
+        const listArea = document.getElementById('questListArea');
+        if(!listArea || !c) return;
+
+        let html = "<h4>Skickade uppgifter:</h4><ul style='list-style:none; margin-top:10px;'>";
+        c.quests.forEach((q) => {
+            html += `<li style="padding:10px; background:#f1f5f9; border-radius:8px; margin-bottom:5px; font-size:14px;">
+                <b>Fråga:</b> ${q.q} <br>
+                <b>Svar:</b> ${q.a} <br>
+                <small style="color:var(--primary);">Belöning: ${q.xpReward || 100} XP</small>
+            </li>`;
+        });
+        html += "</ul>";
+        listArea.innerHTML = html;
+    }
+
+    function joinClass() {
+        const code = document.getElementById('joinCode').value.toUpperCase().trim();
+        const user = localStorage.getItem('currentUser');
+        const c = myClasses.find(x => x.code === code);
+        if (c) {
+            userDatabase[user].classCode = code;
+            localStorage.setItem('userDatabase', JSON.stringify(userDatabase));
+            location.reload();
+        } else { alert("Fel kod"); }
+    }
+
+    function showClassroom() {
+        document.getElementById('joinSection').style.display = 'none';
+        document.getElementById('studentClassroom').style.display = 'block';
+        const user = localStorage.getItem('currentUser');
+        const code = userDatabase[user].classCode;
+        const c = myClasses.find(x => x.code === code);
+        if(!c) return;
+        document.getElementById('classNameTitle').innerText = c.name;
+
+        if (c.quests.length > 0) {
+            const lastQ = c.quests[c.quests.length - 1];
+            const completed = userDatabase[user].completedQuests || [];
+            if (completed.includes(lastQ.id)) {
+                document.getElementById('questText').innerHTML = `<b>Fråga:</b> ${lastQ.q}<br><br><span style="color:green">✅ Klar!</span>`;
+                document.getElementById('answerArea').style.display = 'none';
+            } else {
+                document.getElementById('questText').innerHTML = `<b>Fråga:</b> ${lastQ.q}`;
+                document.getElementById('answerArea').style.display = 'block';
+                document.getElementById('submitAnswerBtn').onclick = () => checkAnswer(lastQ.id, lastQ.a);
+            }
+        }
+    }
+
+    function checkAnswer(id, correct) {
+        const val = document.getElementById('studentAnswerInput').value.toLowerCase().trim();
+        const email = localStorage.getItem('currentUser');
+        if (val === correct) {
+            if(!userDatabase[email].completedQuests) userDatabase[email].completedQuests = [];
+            if (userDatabase[email].completedQuests.includes(id)) return;
+
+            const code = userDatabase[email].classCode;
+            const c = myClasses.find(x => x.code === code);
+            const quest = c.quests.find(q => q.id === id);
+            const reward = quest.xpReward ? parseInt(quest.xpReward) : 100;
+
+            userDatabase[email].completedQuests.push(id);
+            userDatabase[email].xp = (userDatabase[email].xp || 0) + reward;
+            localStorage.setItem('userDatabase', JSON.stringify(userDatabase));
+            alert(`RÄTT! Du fick ${reward} XP!`);
+            location.reload();
+        } else { alert("Fel svar!"); }
+    }
+
+    function renderAdmin() {
+        const tList = document.getElementById('teacherListDisplay');
+        if(tList) {
+            tList.innerHTML = "";
+            teacherAccounts.forEach(t => {
+                tList.innerHTML += `<li style="padding:8px; background:#f8fafc; margin-bottom:5px; border-radius:5px; display:flex; justify-content:space-between; align-items:center;">
+                    📧 ${t} <button onclick="removeTeacher('${t}')" style="background:none; border:none; color:#ef4444; cursor:pointer;">Ta bort</button>
+                </li>`;
+            });
+        }
+        const sList = document.getElementById('allStudents');
+        if(sList) {
+            sList.innerHTML = "";
+            Object.keys(userDatabase).forEach(e => {
+                if(!teacherAccounts.includes(e) && e !== myAdminMejl) {
+                    sList.innerHTML += `<li style="padding:8px; border-bottom:1px solid #eee;">
+                        <b>${userDatabase[e].fullName}</b> (${e}) - XP: ${userDatabase[e].xp || 0}
+                    </li>`;
+                }
+            });
+        }
+    }
+
+    function addTeacher() {
+        const email = document.getElementById('newTeacherEmail').value.toLowerCase().trim();
+        if (email && !teacherAccounts.includes(email)) {
+            teacherAccounts.push(email);
+            localStorage.setItem('savedTeachers', JSON.stringify(teacherAccounts));
+            renderAdmin();
+        }
+    }
+
+    function removeTeacher(email) {
+        teacherAccounts = teacherAccounts.filter(x => x !== email);
+        localStorage.setItem('savedTeachers', JSON.stringify(teacherAccounts));
+        renderAdmin();
+    }
+
+    function renderLeaderboard() {
+        const listDiv = document.getElementById('leaderboardList');
+        if(!listDiv) return;
+        
+        const scores = Object.keys(userDatabase)
+            .map(email => ({
+                name: userDatabase[email].fullName,
+                xp: userDatabase[email].xp || 0,
+                email: email
+            }))
+            .filter(user => !teacherAccounts.includes(user.email) && user.email !== myAdminMejl)
+            .sort((a, b) => b.xp - a.xp);
+
+        listDiv.innerHTML = "";
+        scores.forEach((user, index) => {
+            const isTop3 = index < 3;
+            const medals = ["🥇", "🥈", "🥉"];
+            
+            listDiv.innerHTML += `
+                <div style="display:flex; align-items:center; padding:15px; background:${isTop3 ? '#f8faff' : 'white'}; border:1px solid ${isTop3 ? 'var(--primary)' : '#e5e7eb'}; border-radius:12px; margin-bottom:10px;">
+                    <div style="width:40px; font-weight:800; font-size:18px; color:var(--primary);">
+                        ${index < 3 ? medals[index] : "#" + (index + 1)}
+                    </div>
+                    <div style="flex:1; font-weight:600;">${user.name}</div>
+                    <div style="background:var(--primary); color:white; padding:5px 12px; border-radius:20px; font-size:14px; font-weight:bold;">
+                        ${user.xp} XP
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    async function sendAiMessage() {
+        const input = document.getElementById('aiUserInput');
+        const msgArea = document.getElementById('aiChatMessages');
+        if(!input || !msgArea) return;
+
+        const text = input.value.trim();
+        const apiKey = "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"; 
+
+        if (text === "") return;
+
+        msgArea.innerHTML += `<div class="msg user-msg">${text}</div>`;
+        input.value = "";
+        msgArea.scrollTop = msgArea.scrollHeight;
+
+        const thinkingId = "thinking-" + Date.now();
+        msgArea.innerHTML += `<div class="msg ai-msg" id="${thinkingId}">...</div>`;
+        msgArea.scrollTop = msgArea.scrollHeight;
+
+        try {
+            const response = await fetch("https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    inputs: `<s>[INST] Du är en snäll studiecoach för barn. Svara kort på svenska: ${text} [/INST]`,
+                    parameters: { max_new_tokens: 250, return_full_text: false }
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.error && data.error.includes("loading")) {
+                document.getElementById(thinkingId).innerText = "Jag vaknar snart... Prova igen om 20 sekunder! ☕";
+                return;
+            }
+
+            let aiResponse = "Hoppsan, jag tappade tråden. Prova igen!";
+            if (Array.isArray(data) && data[0].generated_text) {
+                aiResponse = data[0].generated_text.split("[/INST]").pop().trim();
+            }
+            
+            document.getElementById(thinkingId).innerText = aiResponse;
+
+        } catch (error) {
+            document.getElementById(thinkingId).innerText = "Kunde inte nå AI:n. Kolla internet!";
+        }
+        msgArea.scrollTop = msgArea.scrollHeight;
+    }
+
+    function toggleChat() {
+        const chat = document.getElementById('aiChatWindow');
+        if(chat) {
+            chat.style.display = (chat.style.display === 'flex') ? 'none' : 'flex';
+        }
+    }
+</script>
+<div id="aiChatBubble" onclick="toggleChat()">
+    <span>🤖</span>
+</div>
+
+<div id="aiChatWindow">
+    <div id="aiChatHeader">
+        <span>EduQuest AI-Coach</span>
+        <button onclick="toggleChat()" style="background:none; border:none; color:white; cursor:pointer; font-size:18px;">×</button>
+    </div>
+    <div id="aiChatMessages">
+        <div class="msg ai-msg">Hej! Jag är din studiecoach. Vad kan jag hjälpa dig med idag?</div>
+    </div>
+    <div id="aiChatInputArea">
+        <input type="text" id="aiUserInput" placeholder="Skriv din fråga..." onkeypress="if(event.key === 'Enter') sendAiMessage()">
+        <button onclick="sendAiMessage()">🚀</button>
+    </div>
+</div>
+</body>
+</html>
