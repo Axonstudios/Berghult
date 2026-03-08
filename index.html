@@ -293,11 +293,14 @@
 </div>
 
 <nav id="sidebarNav" style="display: none;">
-    <div class="nav-item teacher-only" style="display:none;" onclick="switchView('teacherInboxView', this)">📥 Inkorg</div>
-    <div class="logo">⚡ EduQuest</div>
-    <div class="nav-item active" onclick="switchView('dashboardView', this)">Dashboard</div>
-    <div class="nav-item" onclick="switchView('leaderboardView', this)">🏆 Topplista</div> <div class="nav-item teacher-only" onclick="switchView('classView', this)">Mina Klasser</div>
-    <div class="nav-item admin-only" onclick="switchView('adminView', this)">System-Admin</div>
+    <div class="nav-item" onclick="switchView('dashboardView', this)">🏠 Dashboard</div>
+<div class="nav-item" onclick="switchView('classView', this)">📚 Mina klasser</div>
+
+<div class="nav-item teacher-only" style="display:none;" onclick="switchView('teacherInboxView', this)">📥 Inkorg</div>
+
+<div class="nav-item" onclick="switchView('leaderboardView', this)">🏆 Topplista</div>
+<div class="nav-item teacher-only" style="display:none;" onclick="switchView('teacherChatView', this)">💬 Chatta med lärare</div>
+<div class="nav-item admin-only" style="display:none;" onclick="switchView('adminView', this)">⚙️ Admin</div>
 </nav>
 
 <main id="mainContent" style="display: none;">
@@ -530,26 +533,28 @@
     };
 
     function switchView(id, element) {
-    // Lägg till 'teacherInboxView' i listan här under
-    ['dashboardView', 'classView', 'adminView', 'leaderboardView', 'teacherChatView', 'teacherInboxView'].forEach(v => {
+    // Lista på alla vyer som ska kunna döljas/visas
+    const views = ['dashboardView', 'classView', 'adminView', 'leaderboardView', 'teacherChatView', 'teacherInboxView'];
+    
+    views.forEach(v => {
         const el = document.getElementById(v);
         if(el) el.style.display = 'none';
     });
-    
+
+    // Visa den valda vyn
+    const targetView = document.getElementById(id);
+    if(targetView) targetView.style.display = 'block';
+
+    // Hantera aktiv klass på menyknappen
     document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-    document.getElementById(id).style.display = 'block';
     if(element) element.classList.add('active');
 
-    // Kör render-funktioner beroende på vy
-    if (id === 'teacherChatView') renderTeacherStatusList();
-    if (id === 'teacherInboxView') renderInbox();
+    // Uppdatera innehållet i vyn som visas
     if (id === 'leaderboardView') renderLeaderboard();
+    if (id === 'teacherInboxView') renderInbox();
+    if (id === 'classView') renderClasses();
+    if (id === 'adminView') renderAdmin();
 }
-
-    function logout() { 
-        localStorage.removeItem('currentUser'); 
-        location.reload(); 
-    }
 
     function toggleMenu(event) {
         event.stopPropagation();
@@ -899,22 +904,20 @@ function renderInbox() {
     inboxDiv.innerHTML = "";
 
     if (messages.length === 0) {
-        inboxDiv.innerHTML = "<p style='color:gray;'>Inga meddelanden ännu.</p>";
+        inboxDiv.innerHTML = "<div class='card'><p style='color:gray;'>Din inkorg är tom.</p></div>";
         return;
     }
 
-    // Visa meddelanden med det senaste överst
-    [...messages].reverse().forEach((msg, index) => {
+    [...messages].reverse().forEach((msg) => {
         const senderName = userDatabase[msg.from] ? userDatabase[msg.from].fullName : msg.from;
-        
         inboxDiv.innerHTML += `
-            <div class="card" style="border-left: 5px solid var(--primary); margin-bottom: 15px;">
-                <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+            <div class="card" style="border-left: 5px solid var(--primary); margin-bottom: 10px;">
+                <div style="display:flex; justify-content:space-between;">
                     <b>Från: ${senderName}</b>
-                    <small style="color:gray;">${msg.time}</small>
+                    <small>${msg.time}</small>
                 </div>
-                <p style="background: #f1f5f9; padding: 10px; border-radius: 8px;">${msg.text}</p>
-                <button onclick="replyToStudent('${msg.from}')" style="margin-top:10px; background:var(--secondary); font-size: 12px;">Svara</button>
+                <p style="margin-top:10px; font-style: italic;">"${msg.text}"</p>
+                <button onclick="replyToStudent('${msg.from}')" style="margin-top:10px; background:var(--secondary);">Svara</button>
             </div>
         `;
     });
