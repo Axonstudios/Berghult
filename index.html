@@ -419,6 +419,9 @@
 </main>
 
 <script>
+    let chatHistory = [
+    { role: "system", content: "Du är en uppmuntrande studiecoach för barn. Svara kort på svenska." }
+];
     // 1. Databas och Variabler
     let userDatabase = JSON.parse(localStorage.getItem('userDatabase')) || {
         "liawai0802@edu.lerum.se": { password: "123", fullName: "Admin", xp: 0 },
@@ -780,12 +783,14 @@ async function sendAiMessage() {
 
     if (text === "") return;
 
+    // 1. Spara användarens meddelande i minnet
+    chatHistory.push({ role: "user", content: text });
+
+    // Visa meddelandet i UI
     msgArea.innerHTML += `<div class="msg user-msg">${text}</div>`;
     input.value = "";
     
     const thinkingId = "thinking-" + Date.now();
-    
-    // Här lägger vi in de snygga hoppande prickarna
     msgArea.innerHTML += `
         <div class="msg ai-msg" id="${thinkingId}">
             <div class="typing-dots"><span></span><span></span><span></span></div>
@@ -801,12 +806,29 @@ async function sendAiMessage() {
             },
             body: JSON.stringify({
                 model: "llama-3.3-70b-versatile",
-                messages: [
-                    { role: "system", content: "Du är en snäll och kortfattad studiecoach för barn." },
-                    { role: "user", content: text }
-                ]
+                // HÄR ÄR SKILLNADEN: Vi skickar chatHistory istället för bara ett meddelande
+                messages: chatHistory 
             })
         });
+
+        const data = await response.json();
+        const aiResponse = data.choices[0].message.content;
+
+        // 2. Spara även AI:ns svar i minnet så den minns vad den själv sa!
+        chatHistory.push({ role: "assistant", content: aiResponse });
+
+        // Begränsa minnet (valfritt): Sparar bara de senaste 10 meddelandena 
+        // så att det inte blir för dyrt eller långsamt
+        if (chatHistory.length > 11) { 
+            chatHistory.splice(1, 2); // Tar bort de äldsta men behåller system-instruktionen
+        }
+
+        typeWriter(aiResponse, thinkingId);
+
+    } catch (error) {
+        document.getElementById(thinkingId).innerText = "Hoppsan, jag tappade tråden!";
+    }
+}
 
         const data = await response.json();
         
@@ -817,10 +839,10 @@ async function sendAiMessage() {
             document.getElementById(thinkingId).innerText = "Kunde inte få svar från hjärnan.";
         }
 
-    } catch (error) {
+        catch (error) {
         document.getElementById(thinkingId).innerText = "Hoppsan, anslutningen bröts!";
     }
-}
+
 
 // --- SLUT PÅ KOPIERING ---
 
